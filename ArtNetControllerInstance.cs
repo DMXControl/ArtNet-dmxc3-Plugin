@@ -1,6 +1,7 @@
 ﻿using ArtNetSharp;
 using ArtNetSharp.Communication;
 using DMXLIB;
+using System.Net;
 
 namespace org.dmxc.lumos.Kernel.DMX
 {
@@ -11,7 +12,18 @@ namespace org.dmxc.lumos.Kernel.DMX
         public override bool EnableDmxOutput => enableDmxOutput;
         public ArtNetControllerInstance():base(ArtNet.Instance)
         {
-            Name = "DMXControl 3";
+            string longName = "DMXControl 3";
+            try
+            {
+                string hostname = Dns.GetHostName();
+                if (hostname.Length > (64 - 15))
+                {
+                    hostname = hostname.Substring(0, (64 - 15));
+                }
+                longName += " (" + hostname + ")";
+            }
+            catch { }
+            Name = longName;
             ShortName = "DMXControl 3";
         }
 

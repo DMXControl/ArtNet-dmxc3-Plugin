@@ -10,17 +10,15 @@ namespace org.dmxc.lumos.Kernel.DMX
 {
     public class ArtNetFactory : AbstractDMXInterfaceFactory
     {
-        private int _instCnt = byte.MaxValue - 1; //Every An Artnet-Device can only have 255 Ports - one root on 0
+        private int _instCnt = byte.MaxValue - 1; //Every An Artnet-Device can only have 255 Ports - one root on 0 (generated automaticly)
         internal static ArtNet ArtNet { get; } = ArtNet.Instance;
         internal static ArtNetControllerInstance ArtNetControllerInstance { get; } = new ArtNetControllerInstance();
-        internal static PortConfig RootPortConfig { get; } = new PortConfig(0, new PortAddress(0), false, false);
 
         internal List<IDMXInterface> interfaces = new List<IDMXInterface>();
         internal List<int> notUsedPortIndices = new List<int>();
 
         public ArtNetFactory() : base()
         {
-            ArtNetControllerInstance.AddPortConfig(RootPortConfig);
             ArtNet.AddInstance(ArtNetControllerInstance);
         }
         ~ArtNetFactory()
@@ -39,10 +37,10 @@ namespace org.dmxc.lumos.Kernel.DMX
             {
                 if (_instCnt > 0)
                 {
-                    yield return new DMXInterfaceMetadata(this.VendorID, "ArtNet 4", "ArtNet 4", this.VendorID, "Art-Net", String.Empty,
+                    yield return new DMXInterfaceMetadata(this.VendorID, "ArtNet 4", "ArtNet 4", this.VendorID, "Art-Net 4", String.Empty,
                         new List<DMXPortMetadata>
                             {
-                                DMXPortMetadata.GetDuplexPort(0)
+                                DMXPortMetadata.GetSimplexPort(0)
                             }.AsReadOnly(), true, true, null, true);
                 }
             }
@@ -53,11 +51,11 @@ namespace org.dmxc.lumos.Kernel.DMX
             if (this._instCnt > 0)
             {
                 this._instCnt--;
-                int portIndex = interfaces.Count;
+                int portIndex = interfaces.Count + 1;
                 if (notUsedPortIndices.Count != 0)
                     portIndex = notUsedPortIndices.Min();
 
-                ArtNetInterface iface = new ArtNetInterface(portIndex, meta);
+                ArtNetInterface iface = new ArtNetInterface((byte)portIndex, meta);
                 interfaces.Add(iface);
                 return iface;
             }
