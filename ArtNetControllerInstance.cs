@@ -10,6 +10,9 @@ namespace org.dmxc.lumos.Kernel.DMX
         public override ushort ESTAManufacturerCode => Constants.ESTA_MANUFACTURER_CODE;
         private bool enableDmxOutput;
         public override bool EnableDmxOutput => enableDmxOutput;
+        protected override string UrlProduct => @"https://dmxcontrol.de/de/";
+        protected override string UrlUserGuid => @"https://wiki-de.dmxcontrol-projects.org/index.php?title=Inhalts%C3%BCbersicht_Hauptprogramm_DMXC3";
+        protected override string UrlSupport => @"https://forum.dmxcontrol-projects.org/";
         public ArtNetControllerInstance():base(ArtNet.Instance)
         {
             string longName = "DMXControl 3";
