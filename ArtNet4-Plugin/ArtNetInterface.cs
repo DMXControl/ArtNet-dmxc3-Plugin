@@ -32,7 +32,7 @@ namespace org.dmxc.lumos.Kernel.DMX
         private readonly byte[] _bufferRx = new byte[512];
         private bool _forceBroadcast = false;
         private IPAddress _additionalTarget = null;
-        private ArtNetControllerInstance ArtNetControllerInstance => ArtNetFactory.ArtNetControllerInstance;
+        private ArtNetControllerInstance ArtNetControllerInstance => ArtNetFactory.getArtNetControllerInstance();
         private readonly PortConfig portConfig = null;
 
         public readonly int PortIndex;
@@ -158,7 +158,7 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         protected override object GetParameterInternal(string parameter) {
             if (Object.Equals(parameter, PARA_PORT_ADDRESS))
-                return this.PortAddress.ToString();
+                return this.PortAddress.Combined;
             else if (Object.Equals(parameter, PARA_FORCE_BCAST))
                 return this._forceBroadcast;
             else if (Object.Equals(parameter, PARA_ADD_TARGET)) {
@@ -178,6 +178,15 @@ namespace org.dmxc.lumos.Kernel.DMX
                 {
                     this.PortAddress = pa;
                     return true;
+                }
+                if (value is ushort ushortPortAddress)
+                {
+                    this.PortAddress = new PortAddress((ushort)ushortPortAddress);
+                }
+                if (value is string stringPortAddress)
+                {
+                    ushortPortAddress= Convert.ToUInt16(stringPortAddress);
+                    this.PortAddress = new PortAddress((ushort)ushortPortAddress);
                 }
             }
             else if (Object.Equals(parameter, PARA_FORCE_BCAST))
@@ -212,8 +221,12 @@ namespace org.dmxc.lumos.Kernel.DMX
             {
                 if (value is PortAddress pa)
                     return true;
+                if (value is string str)
+                    value = Convert.ToUInt16(value);
+
                 if (!(value is ushort _ushort))
                     throw new ArgumentException("Value not valid");
+
                 new PortAddress(_ushort);
 
             }

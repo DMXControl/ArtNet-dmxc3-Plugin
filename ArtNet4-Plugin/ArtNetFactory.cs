@@ -1,10 +1,9 @@
 ﻿using ArtNetSharp;
-using ArtNetSharp.Communication;
 using DMXLIB;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ArtNetConstants = ArtNetSharp.Constants;
+using System.Threading.Tasks;
 
 namespace org.dmxc.lumos.Kernel.DMX
 {
@@ -12,18 +11,29 @@ namespace org.dmxc.lumos.Kernel.DMX
     {
         private int _instCnt = byte.MaxValue - 1; //Every An Artnet-Device can only have 255 Ports - one root on 0 (generated automaticly)
         internal static ArtNet ArtNet { get; } = ArtNet.Instance;
-        internal static ArtNetControllerInstance ArtNetControllerInstance { get; } = new ArtNetControllerInstance();
+        private static ArtNetControllerInstance artNetControllerInstance;
+        internal static ArtNetControllerInstance getArtNetControllerInstance()
+        {
+            if (artNetControllerInstance == null)
+                artNetControllerInstance = new ArtNetControllerInstance();
+            return artNetControllerInstance;
+        }
 
         internal List<IDMXInterface> interfaces = new List<IDMXInterface>();
         internal List<int> notUsedPortIndices = new List<int>();
 
         public ArtNetFactory() : base()
         {
-            ArtNet.AddInstance(ArtNetControllerInstance);
+            _ = init();
+        }
+        private async Task init() // Do this as async Task to avoid Timeout
+        {
+            ArtNet.AddInstance(getArtNetControllerInstance());
+            await Task.CompletedTask;
         }
         ~ArtNetFactory()
         {
-            ((IDisposable)ArtNetControllerInstance).Dispose();
+            ((IDisposable)getArtNetControllerInstance()).Dispose();
         }
 
         public override string VendorID
@@ -41,7 +51,7 @@ namespace org.dmxc.lumos.Kernel.DMX
                         new List<DMXPortMetadata>
                             {
                                 DMXPortMetadata.GetSimplexPort(0)
-                            }.AsReadOnly(), true, true, null, true);
+                            }.AsReadOnly(), true, true, null, false);
                 }
             }
         }
@@ -74,12 +84,12 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         public override IDMXInterfaceSynchronizer GetInterfaceSynchronizer(IDMXInterface iface)
         {
-            return ArtNetControllerInstance;
+            return getArtNetControllerInstance();
         }
 
         protected override void OnLoggerChanged()
         {
-            ArtNetControllerInstance.Logger = Logger;
+            getArtNetControllerInstance().Logger = Logger;
         }
     }
 }
