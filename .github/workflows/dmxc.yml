@@ -3,7 +3,7 @@ name: Build DMXControl Plugin
 
 env: 
   PluginName: "ArtNet-Plugin"
-  SolutionName: "ArtNet-Plugin"
+  SolutionName: "ArtisticLicenseArtNet4"
 
 on: push
 
