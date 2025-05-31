@@ -8,7 +8,7 @@ namespace org.dmxc.lumos.Kernel.DMX
     public class ArtNetControllerInstance : ControllerInstance, IDMXInterfaceSynchronizer {
         public override ushort OEMProductCode => Constants.OEM_CODE;
         public override ushort ESTAManufacturerCode => Constants.ESTA_MANUFACTURER_CODE;
-        private bool enableDmxOutput;
+        private bool enableDmxOutput = true;
         public override bool EnableDmxOutput => enableDmxOutput;
         protected override string UrlProduct => @"https://dmxcontrol.de/de/";
         protected override string UrlUserGuid => @"https://wiki-de.dmxcontrol-projects.org/index.php?title=Inhalts%C3%BCbersicht_Hauptprogramm_DMXC3";
@@ -32,12 +32,12 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         void IDMXInterfaceSynchronizer.BeforeInterfacesSend()
         {
-            this.enableDmxOutput = false;
+            //this.enableDmxOutput = false;
         }
 
         void IDMXInterfaceSynchronizer.AfterInterfacesSend()
         {
-            this.enableDmxOutput = true;
+            //this.enableDmxOutput = true;
         }
 
         new public ILog Logger
