@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ArtNetSharp" Version="0.0.37" PrivateAssets="all" />
+    <PackageReference Include="ArtNetSharp" Version="0.0.38" PrivateAssets="all" />
 	  <Reference Include="DMXLIB">
 		  <HintPath Condition="Exists('..\..\Lumos\3.3\LumosProtobuf\bin\Debug\netstandard2.0')">..\..\Lumos\3.3\LumosProtobuf\bin\Debug\netstandard2.0\LumosProtobuf.dll</HintPath>
 		  <HintPath Condition="Exists('..\..\Lumos\LumosProtobuf\bin\Debug\netstandard2.0')">..\..\Lumos\LumosProtobuf\bin\Debug\netstandard2.0\LumosProtobuf.dll</HintPath>
