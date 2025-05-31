@@ -33,9 +33,9 @@ jobs:
               Invoke-RestMethod -Uri "https://www.dmxcontrol.de/files/DMXControl_3/plugin-lib/dmxc-plugin-lib-${dmxcplugver}.zip" -OutFile "${dmxczip}"
             }
             Expand-Archive "${dmxczip}" "${folder}/temp"
-            New-Item -ItemType Directory -Force -Path "${folder}/bin/Release"
+            New-Item -ItemType Directory -Force -Path "${folder}/bin/Release/net8.0"
             foreach ($type in $dmxctypes){
-              Copy-Item -Path "${folder}/temp/${type}/*" -Destination "${folder}/bin/Release"
+              Copy-Item -Path "${folder}/temp/${type}/*" -Destination "${folder}/bin/Release/net8.0"
             }
           }
 
@@ -54,7 +54,7 @@ jobs:
             foreach($type in (Get-Content "${folder}/dmxcplug.json" | ConvertFrom-Json).type) {
               $filter = Get-ChildItem "${folder}/temp/${type}" -Name
               New-Item -ItemType "directory" -Path "dist/${type}/${{env.PluginName}}"
-              Get-ChildItem "${folder}/bin/Release" -Name | where {$filter -NotContains $_} | %{ Copy-Item -Path "${folder}/bin/Release/${_}" -Destination "dist/${type}/${{env.PluginName}}/${_}"}
+              Get-ChildItem "${folder}/bin/Release/net8.0" -Name | where {$filter -NotContains $_} | %{ Copy-Item -Path "${folder}/bin/Release/net8.0/${_}" -Destination "dist/${type}/${{env.PluginName}}/${_}"}
             }
           }
 
