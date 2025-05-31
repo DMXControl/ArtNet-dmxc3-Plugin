@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>9</LangVersion>
     <AssemblyName>ArtisticLicenseArtNet4</AssemblyName>
     <PackageId>DMXControlProjects.ArtisticLicenseArtNet4</PackageId>
     <Authors>DMXControl Projects e.V.</Authors>
