@@ -69,12 +69,12 @@ pipeline {
 		stage('Archive Artifacts'){
 			steps {
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtisticLicenseArtNet4.dll\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\ArtisticLicenseArtNet4.deps.json\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\ArtisticLicenseArtNet4.pdb\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\ArtNetSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\RDMSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\WellKnownDataTypes.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
-				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.9\\System.*.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtisticLicenseArtNet4.deps.json\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtisticLicenseArtNet4.pdb\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtNetSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\RDMSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\WellKnownDataTypes.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\System.*.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
 				
 				dir('output') {
 					archiveArtifacts artifacts: '**/*.*'
