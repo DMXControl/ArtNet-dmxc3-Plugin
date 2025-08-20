@@ -34,10 +34,10 @@ pipeline {
 				script{
 					try {
 						println('Copy artefacts from Job \"Lumos DMXPlugins (Pipeline)/' + env.BRANCH_NAME.replaceAll("/", "%2F") + '\"')
-						copyArtifacts(projectName: 'Lumos DMXPlugins (Pipeline)/' + env.BRANCH_NAME.replaceAll("/", "%2F") , target: 'dep');
+						copyArtifacts(projectName: 'Lumos DMXPlugins (Pipeline)/' + env.BRANCH_NAME.replaceAll("/", "%2F"), filter: "build/DMXLIB/*.*", target: 'dep', flatten: true);
 					} catch (hudson.AbortException e) {
 						println('Job \"Lumos DMXPlugins (Pipeline)/' + env.BRANCH_NAME.replaceAll("/", "%2F") + '\" does not exist. Copy from default Job')
-						copyArtifacts(projectName: 'Lumos DMXPlugins (Pipeline)/master', target: 'dep');
+						copyArtifacts(projectName: 'Lumos DMXPlugins (Pipeline)/master', filter: "build/DMXLIB/*.*", target: 'dep', flatten: true);
 					}
 				}
 			}
