@@ -286,5 +286,11 @@ namespace org.dmxc.lumos.Kernel.DMX
         {
             //Not implemented
         }
+        protected override void DisposeHook()
+        {
+            ArtNetControllerInstance.RemovePortConfig(portConfig);
+            ArtNetControllerInstance.DMXReceived -= DMXReceived;
+            base.DisposeHook();
+        }
     }
 }
