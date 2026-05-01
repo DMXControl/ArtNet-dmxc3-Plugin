@@ -5,7 +5,6 @@ using DMXLIB.I18N;
 using org.dmxc.wkdt.Light.ArtNet;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 
 namespace org.dmxc.lumos.Kernel.DMX
@@ -16,15 +15,6 @@ namespace org.dmxc.lumos.Kernel.DMX
         public static readonly string PARA_ADD_TARGET = T._("Additional send to IP (optional)");
 
         public static readonly string PARA_PORT_ADDRESS = T._("PortAddress");
-
-        private static Dictionary<string, ushort> calculatePortAddresses()
-        {
-            Dictionary<string, ushort>  addresses=new Dictionary<string, ushort>();
-            foreach (ushort u in Enumerable.Range(0, ushort.MaxValue / 2))
-                addresses.Add(new PortAddress(u).ToString(), u);
-
-            return addresses;
-        }
 
         private bool IsOutput;
         private bool IsInput;
@@ -41,8 +31,7 @@ namespace org.dmxc.lumos.Kernel.DMX
             : base(metadata)
         {
             PortIndex = portIndex;
-
-            portConfig = new PortConfig(portIndex, new PortAddress(0), false, true) { PortNumber = portIndex, Type = EPortType.InputToArtNet };
+            portConfig = new PortConfig(portIndex, new PortAddress(1), false, true) { PortNumber = portIndex, Type = EPortType.InputToArtNet };
             portConfig.Type = EPortType.DMX512;
             ArtNetControllerInstance.AddPortConfig(portConfig);
             ArtNetControllerInstance.DMXReceived += DMXReceived;
@@ -59,10 +48,11 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         public PortAddress PortAddress
         {
-            get { return portConfig.PortAddress; }
+            get => portConfig.PortAddress;
             private set
             {
-                if (portConfig.PortAddress == value) return;
+                if (portConfig.PortAddress == value)
+                    return;
                 portConfig.PortAddress = value;
                 UpdatePortDescription();
             }
@@ -73,7 +63,7 @@ namespace org.dmxc.lumos.Kernel.DMX
             portConfig.Type |= EPortType.InputToArtNet;
             portConfig.Type &= ~EPortType.OutputFromArtNet;
             portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX:true);
+            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
             IsOutput = true;
         }
 
@@ -81,9 +71,10 @@ namespace org.dmxc.lumos.Kernel.DMX
         {
             portConfig.Type &= ~EPortType.InputToArtNet;
             portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX:true);
+            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
             IsOutput = false;
         }
+
         protected override void OnInputEnable(int port)
         {
             portConfig.Type |= EPortType.OutputFromArtNet;
@@ -92,6 +83,7 @@ namespace org.dmxc.lumos.Kernel.DMX
             portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: false);
             IsInput = true;
         }
+
         protected override void OnInputDisable(int port)
         {
             portConfig.Type &= ~EPortType.OutputFromArtNet;
@@ -123,20 +115,25 @@ namespace org.dmxc.lumos.Kernel.DMX
             portConfig.GoodOutput = GoodOutput.None;
         }
 
-        public override EInterfaceOptions Options {
+        public override EInterfaceOptions Options
+        {
             get { return EInterfaceOptions.NONE; }
         }
 
-        public override ESendMode SendMode {
+        public override ESendMode SendMode
+        {
             get { return ESendMode.DELTA_UNIVERSE; }
         }
 
-        public override EReceiveMode ReceiveMode {
+        public override EReceiveMode ReceiveMode
+        {
             get { return EReceiveMode.DELTA_UNIVERSE; }
         }
 
-        protected override IEnumerable<DMXInterfaceParameter> ParametersInternal {
-            get {
+        protected override IEnumerable<DMXInterfaceParameter> ParametersInternal
+        {
+            get
+            {
                 yield return new DMXInterfaceParameter(PARA_PORT_ADDRESS, typeof(PortAddress), EDMXInterfaceParameterType.PERSISTENT)
                 {
                     Description =
@@ -149,20 +146,25 @@ namespace org.dmxc.lumos.Kernel.DMX
                     Environment.NewLine +
                     T._("ArtNet 1 to 2 (8Bit) -> Net (0x00), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
                     Environment.NewLine +
-                    T._("ArtNet 3 to 4 (15Bit) -> Net (0x00-0x7f), Subnet(0x0-0xf) and Universe(0x0-0xf).")
+                    T._("ArtNet 3 to 4 (15Bit) -> Net (0x00-0x7f), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
+                    Environment.NewLine +
+                    T._("PortAddress 0 is deprecated and should not be used!")
                 };
                 yield return new DMXInterfaceParameter(PARA_FORCE_BCAST, typeof(bool), EDMXInterfaceParameterType.PERSISTENT);
                 yield return new DMXInterfaceParameter(PARA_ADD_TARGET, typeof(string), EDMXInterfaceParameterType.PERSISTENT);
             }
         }
 
-        protected override object GetParameterInternal(string parameter) {
+        protected override object GetParameterInternal(string parameter)
+        {
             if (Object.Equals(parameter, PARA_PORT_ADDRESS))
                 return this.PortAddress.Combined;
             else if (Object.Equals(parameter, PARA_FORCE_BCAST))
                 return this._forceBroadcast;
-            else if (Object.Equals(parameter, PARA_ADD_TARGET)) {
-                if (this._additionalTarget == null) {
+            else if (Object.Equals(parameter, PARA_ADD_TARGET))
+            {
+                if (this._additionalTarget == null)
+                {
                     return "";
                 }
                 return this._additionalTarget.ToString();
@@ -185,7 +187,7 @@ namespace org.dmxc.lumos.Kernel.DMX
                 }
                 if (value is string stringPortAddress)
                 {
-                    ushortPortAddress= Convert.ToUInt16(stringPortAddress);
+                    ushortPortAddress = Convert.ToUInt16(stringPortAddress);
                     this.PortAddress = new PortAddress((ushort)ushortPortAddress);
                 }
             }
@@ -210,6 +212,7 @@ namespace org.dmxc.lumos.Kernel.DMX
             }
             return false;
         }
+
         private void UpdatePortDescription()
         {
             SetPortDetailInfo(0, String.Format(T._("Net: {0} Subnet: {1} Universe: {2} [{3}]"), PortAddress.Net, PortAddress.Subnet, PortAddress.Universe, PortAddress));
@@ -242,30 +245,38 @@ namespace org.dmxc.lumos.Kernel.DMX
             }
             return true;
         }
+
         protected override void PortCompleteInternal(int port)
         {
-            portConfig.GoodInput =  new GoodInput(dataReceived:true);
+            portConfig.GoodInput = new GoodInput(dataReceived: true);
         }
 
-        protected override byte[] GetDMXInternal(int port, int address, int count) {
+        protected override byte[] GetDMXInternal(int port, int address, int count)
+        {
             byte[] b = new byte[count];
-            lock (this._bufferRx) {
+            lock (this._bufferRx)
+            {
                 Array.Copy(this._bufferRx, address, b, 0, count);
             }
             return b;
         }
 
-        protected override byte GetDMXInternal(int port, int address) {
-            lock (this._bufferRx) {
+        protected override byte GetDMXInternal(int port, int address)
+        {
+            lock (this._bufferRx)
+            {
                 return this._bufferRx[address];
             }
         }
 
         private void ProcessIncomingDmx(byte[] data)
         {
-            lock (this._bufferRx) {
-                for (int i = 0; i < data.Length; ++i) {
-                    if (data[i] != this._bufferRx[i]) {
+            lock (this._bufferRx)
+            {
+                for (int i = 0; i < data.Length; ++i)
+                {
+                    if (data[i] != this._bufferRx[i])
+                    {
                         this._bufferRx[i] = data[i];
                         OnDMXInChanged(0, i, _bufferRx[i]);
                         portConfig.GoodOutput = GoodOutput.DATA_TRANSMITTED;
@@ -273,10 +284,12 @@ namespace org.dmxc.lumos.Kernel.DMX
                 }
             }
         }
+
         protected override void SendDMXInternal(int port, int address, byte[] values)
         {
             ArtNetControllerInstance.WriteDMXValues(PortAddress, values, (ushort)address, (ushort)values.Length);
         }
+
         protected override void SendDMXInternal(int port, int address, byte value)
         {
             ArtNetControllerInstance.WriteDMXValues(PortAddress, new byte[] { value }, (ushort)address, 1);
@@ -286,6 +299,7 @@ namespace org.dmxc.lumos.Kernel.DMX
         {
             //Not implemented
         }
+
         protected override void DisposeHook()
         {
             ArtNetControllerInstance.RemovePortConfig(portConfig);

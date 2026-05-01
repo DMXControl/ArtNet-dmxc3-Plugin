@@ -9,13 +9,13 @@ namespace org.dmxc.lumos.Kernel.DMX
 {
     public class ArtNetFactory : AbstractDMXInterfaceFactory
     {
-        private int _instCnt = byte.MaxValue - 1; //Every An Artnet-Device can only have 255 Ports - one root on 0 (generated automaticly)
+        private int _instCnt = byte.MaxValue - 1; //Every Artnet-Device can only have 255 Ports - one root on 0 (generated automaticly)
         internal static ArtNet ArtNet { get; } = ArtNet.Instance;
         private static ArtNetControllerInstance artNetControllerInstance;
         internal static ArtNetControllerInstance getArtNetControllerInstance()
         {
-            if (artNetControllerInstance == null)
-                artNetControllerInstance = new ArtNetControllerInstance();
+            artNetControllerInstance ??= new ArtNetControllerInstance();
+
             return artNetControllerInstance;
         }
 
@@ -26,11 +26,13 @@ namespace org.dmxc.lumos.Kernel.DMX
         {
             _ = init();
         }
+
         private async Task init() // Do this as async Task to avoid Timeout
         {
             ArtNet.AddInstance(getArtNetControllerInstance());
             await Task.CompletedTask;
         }
+
         ~ArtNetFactory()
         {
             ((IDisposable)getArtNetControllerInstance()).Dispose();
@@ -69,12 +71,13 @@ namespace org.dmxc.lumos.Kernel.DMX
                 interfaces.Add(iface);
                 return iface;
             }
+
             return null;
         }
 
         protected override void OnInterfaceDisposing(IDMXInterface sender)
         {
-            if (!(sender is ArtNetInterface artNetInterface))
+            if (sender is not ArtNetInterface artNetInterface)
                 return;
 
             this._instCnt++;
@@ -82,14 +85,8 @@ namespace org.dmxc.lumos.Kernel.DMX
             notUsedPortIndices.Add(artNetInterface.PortIndex);
         }
 
-        public override IDMXInterfaceSynchronizer GetInterfaceSynchronizer(IDMXInterface iface)
-        {
-            return getArtNetControllerInstance();
-        }
+        public override IDMXInterfaceSynchronizer GetInterfaceSynchronizer(IDMXInterface iface) => getArtNetControllerInstance();
 
-        protected override void OnLoggerChanged()
-        {
-            getArtNetControllerInstance().Logger = Logger;
-        }
+        protected override void OnLoggerChanged() => getArtNetControllerInstance().Logger = Logger;
     }
 }

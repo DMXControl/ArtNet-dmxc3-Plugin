@@ -5,7 +5,8 @@ using System.Net;
 
 namespace org.dmxc.lumos.Kernel.DMX
 {
-    public class ArtNetControllerInstance : ControllerInstance, IDMXInterfaceSynchronizer {
+    public class ArtNetControllerInstance : ControllerInstance, IDMXInterfaceSynchronizer
+    {
         public override ushort OEMProductCode => Constants.OEM_CODE;
         public override ushort ESTAManufacturerCode => Constants.ESTA_MANUFACTURER_CODE;
         private bool enableDmxOutput = true;
@@ -13,7 +14,8 @@ namespace org.dmxc.lumos.Kernel.DMX
         protected override string UrlProduct => @"https://dmxcontrol.de/de/";
         protected override string UrlUserGuid => @"https://wiki-de.dmxcontrol-projects.org/index.php?title=Inhalts%C3%BCbersicht_Hauptprogramm_DMXC3";
         protected override string UrlSupport => @"https://forum.dmxcontrol-projects.org/";
-        public ArtNetControllerInstance():base(ArtNet.Instance)
+
+        public ArtNetControllerInstance() : base(ArtNet.Instance)
         {
             string longName = "DMXControl 3";
             try
