@@ -58,49 +58,56 @@ namespace org.dmxc.lumos.Kernel.DMX
             }
         }
 
+        private void setPortConfigType(EPortType type, bool enable)
+        {
+            if (enable)
+                portConfig.Type |= type;
+            else
+                portConfig.Type &= ~type;
+        }
+
         protected override void OnOutputEnable(int port)
         {
-            portConfig.Type |= EPortType.InputToArtNet;
-            portConfig.Type &= ~EPortType.OutputFromArtNet;
-            portConfig.GoodInput = GoodInput.None;
+            setPortConfigType(EPortType.InputToArtNet, true);
             portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
+
             IsOutput = true;
         }
 
         protected override void OnOutputDisable(int port)
         {
-            portConfig.Type &= ~EPortType.InputToArtNet;
-            portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
+            setPortConfigType(EPortType.InputToArtNet, false);
+            portConfig.GoodOutput = GoodOutput.None;
+
             IsOutput = false;
         }
 
         protected override void OnInputEnable(int port)
         {
-            portConfig.Type |= EPortType.OutputFromArtNet;
-            portConfig.Type &= ~EPortType.InputToArtNet;
-            portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: false);
+            setPortConfigType(EPortType.OutputFromArtNet, true);
+            portConfig.GoodInput = new GoodInput(inputDisabled: false);
+
             IsInput = true;
         }
 
         protected override void OnInputDisable(int port)
         {
-            portConfig.Type &= ~EPortType.OutputFromArtNet;
+            setPortConfigType(EPortType.OutputFromArtNet, false);
             portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: false);
+
             IsInput = false;
         }
 
         protected override void OnEnable()
         {
-            portConfig.GoodInput = GetOutputState(0) ? new GoodInput(dataReceived: true) : new GoodInput(inputDisabled: true);
-            portConfig.GoodOutput = GetInputState(0) ? new GoodOutput(isBeingOutputAsDMX: true) : new GoodOutput(isBeingOutputAsDMX: false);
+            portConfig.Type = EPortType.DMX512;
+
             if (IsInput)
             {
                 OnInputEnable(0);
                 OnOutputDisable(0);
             }
+
             if (IsOutput)
             {
                 OnOutputEnable(0);
@@ -110,9 +117,11 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         protected override void OnDisable()
         {
-            portConfig.Type = EPortType.DMX512;
             portConfig.GoodInput = GoodInput.None;
             portConfig.GoodOutput = GoodOutput.None;
+
+            setPortConfigType(EPortType.OutputFromArtNet, false);
+            setPortConfigType(EPortType.InputToArtNet, false);
         }
 
         public override EInterfaceOptions Options
