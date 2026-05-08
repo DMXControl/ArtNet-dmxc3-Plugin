@@ -58,9 +58,9 @@ namespace org.dmxc.lumos.Kernel.DMX
             }
         }
 
-        private void setPortConfigType(EPortType type, bool enable)
+        private void setPortConfigType(EPortType type, bool activate)
         {
-            if (enable)
+            if (activate)
                 portConfig.Type |= type;
             else
                 portConfig.Type &= ~type;
@@ -68,32 +68,40 @@ namespace org.dmxc.lumos.Kernel.DMX
 
         protected override void OnOutputEnable(int port)
         {
-            setPortConfigType(EPortType.InputToArtNet, true);
             portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
+
+            if (Enabled)
+                setPortConfigType(EPortType.InputToArtNet, true);
 
             IsOutput = true;
         }
 
         protected override void OnOutputDisable(int port)
         {
-            setPortConfigType(EPortType.InputToArtNet, false);
             portConfig.GoodOutput = GoodOutput.None;
+
+            if (Enabled)
+                setPortConfigType(EPortType.InputToArtNet, false);
 
             IsOutput = false;
         }
 
         protected override void OnInputEnable(int port)
         {
-            setPortConfigType(EPortType.OutputFromArtNet, true);
             portConfig.GoodInput = new GoodInput(inputDisabled: false);
+
+            if (Enabled)
+                setPortConfigType(EPortType.OutputFromArtNet, true);
 
             IsInput = true;
         }
 
         protected override void OnInputDisable(int port)
         {
-            setPortConfigType(EPortType.OutputFromArtNet, false);
             portConfig.GoodInput = GoodInput.None;
+
+            if (Enabled)
+                setPortConfigType(EPortType.OutputFromArtNet, false);
 
             IsInput = false;
         }
@@ -102,17 +110,8 @@ namespace org.dmxc.lumos.Kernel.DMX
         {
             portConfig.Type = EPortType.DMX512;
 
-            if (IsInput)
-            {
-                OnInputEnable(0);
-                OnOutputDisable(0);
-            }
-
-            if (IsOutput)
-            {
-                OnOutputEnable(0);
-                OnInputDisable(0);
-            }
+            setPortConfigType(EPortType.InputToArtNet, IsOutput);
+            setPortConfigType(EPortType.OutputFromArtNet, IsInput);
         }
 
         protected override void OnDisable()
