@@ -3,316 +3,317 @@ using ArtNetSharp.Communication;
 using DMXLIB;
 using DMXLIB.I18N;
 using org.dmxc.wkdt.Light.ArtNet;
+using org.dmxc.wkdt.Network;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
-namespace org.dmxc.lumos.Kernel.DMX
+namespace org.dmxc.lumos.Kernel.DMX;
+
+public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
 {
-    public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
+    public static readonly string PARA_FORCE_BCAST = T._("Force broadcast");
+    public static readonly string PARA_ADD_TARGET = T._("Additional send to IP (optional), multiple IPs separated by semicolons");
+
+    public static readonly string PARA_PORT_ADDRESS = T._("PortAddress");
+
+    private bool IsOutput;
+    private bool IsInput;
+
+    private readonly byte[] _bufferRx = new byte[512];
+    private bool _forceBroadcast = false;
+    private IEnumerable<IPAddress> _additionalTargets = null;
+    private ArtNetControllerInstance ArtNetControllerInstance => ArtNetFactory.getArtNetControllerInstance();
+    private readonly PortConfig portConfig = null;
+
+    public readonly int PortIndex;
+
+    public ArtNetInterface(in byte portIndex, in DMXInterfaceMetadata metadata)
+        : base(metadata)
     {
-        public static readonly string PARA_FORCE_BCAST = T._("Force broadcast");
-        public static readonly string PARA_ADD_TARGET = T._("Additional send to IP (optional)");
+        PortIndex = portIndex;
+        portConfig = new PortConfig(portIndex, new PortAddress(1), false, true) { PortNumber = portIndex, Type = EPortType.InputToArtNet };
+        portConfig.Type = EPortType.DMX512;
+        ArtNetControllerInstance.AddPortConfig(portConfig);
+        ArtNetControllerInstance.DMXReceived += DMXReceived;
+    }
 
-        public static readonly string PARA_PORT_ADDRESS = T._("PortAddress");
+    private void DMXReceived(object sender, PortAddress portAddress)
+    {
+        if (portAddress != portConfig.PortAddress)
+            return;
 
-        private bool IsOutput;
-        private bool IsInput;
+        if (ArtNetControllerInstance.GetReceivedDMX(portAddress) is byte[] data)
+            ProcessIncomingDmx(data);
+    }
 
-        private readonly byte[] _bufferRx = new byte[512];
-        private bool _forceBroadcast = false;
-        private IPAddress _additionalTarget = null;
-        private ArtNetControllerInstance ArtNetControllerInstance => ArtNetFactory.getArtNetControllerInstance();
-        private readonly PortConfig portConfig = null;
-
-        public readonly int PortIndex;
-
-        public ArtNetInterface(in byte portIndex, in DMXInterfaceMetadata metadata)
-            : base(metadata)
+    public PortAddress PortAddress
+    {
+        get => portConfig.PortAddress;
+        private set
         {
-            PortIndex = portIndex;
-            portConfig = new PortConfig(portIndex, new PortAddress(1), false, true) { PortNumber = portIndex, Type = EPortType.InputToArtNet };
-            portConfig.Type = EPortType.DMX512;
-            ArtNetControllerInstance.AddPortConfig(portConfig);
-            ArtNetControllerInstance.DMXReceived += DMXReceived;
-        }
-
-        private void DMXReceived(object sender, PortAddress portAddress)
-        {
-            if (portAddress != portConfig.PortAddress)
+            if (portConfig.PortAddress == value)
                 return;
-
-            if (ArtNetControllerInstance.GetReceivedDMX(portAddress) is byte[] data)
-                ProcessIncomingDmx(data);
+            portConfig.PortAddress = value;
+            UpdatePortDescription();
         }
+    }
 
-        public PortAddress PortAddress
-        {
-            get => portConfig.PortAddress;
-            private set
-            {
-                if (portConfig.PortAddress == value)
-                    return;
-                portConfig.PortAddress = value;
-                UpdatePortDescription();
-            }
-        }
+    private void setPortConfigType(EPortType type, bool activate)
+    {
+        if (activate)
+            portConfig.Type |= type;
+        else
+            portConfig.Type &= ~type;
+    }
 
-        private void setPortConfigType(EPortType type, bool activate)
-        {
-            if (activate)
-                portConfig.Type |= type;
-            else
-                portConfig.Type &= ~type;
-        }
+    protected override void OnOutputEnable(int port)
+    {
+        portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
 
-        protected override void OnOutputEnable(int port)
-        {
-            portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
+        if (Enabled)
+            setPortConfigType(EPortType.InputToArtNet, true);
 
-            if (Enabled)
-                setPortConfigType(EPortType.InputToArtNet, true);
+        IsOutput = true;
+    }
 
-            IsOutput = true;
-        }
+    protected override void OnOutputDisable(int port)
+    {
+        portConfig.GoodOutput = GoodOutput.None;
 
-        protected override void OnOutputDisable(int port)
-        {
-            portConfig.GoodOutput = GoodOutput.None;
-
-            if (Enabled)
-                setPortConfigType(EPortType.InputToArtNet, false);
-
-            IsOutput = false;
-        }
-
-        protected override void OnInputEnable(int port)
-        {
-            portConfig.GoodInput = new GoodInput(inputDisabled: false);
-
-            if (Enabled)
-                setPortConfigType(EPortType.OutputFromArtNet, true);
-
-            IsInput = true;
-        }
-
-        protected override void OnInputDisable(int port)
-        {
-            portConfig.GoodInput = GoodInput.None;
-
-            if (Enabled)
-                setPortConfigType(EPortType.OutputFromArtNet, false);
-
-            IsInput = false;
-        }
-
-        protected override void OnEnable()
-        {
-            portConfig.Type = EPortType.DMX512;
-
-            setPortConfigType(EPortType.InputToArtNet, IsOutput);
-            setPortConfigType(EPortType.OutputFromArtNet, IsInput);
-        }
-
-        protected override void OnDisable()
-        {
-            portConfig.GoodInput = GoodInput.None;
-            portConfig.GoodOutput = GoodOutput.None;
-
-            setPortConfigType(EPortType.OutputFromArtNet, false);
+        if (Enabled)
             setPortConfigType(EPortType.InputToArtNet, false);
-        }
 
-        public override EInterfaceOptions Options
-        {
-            get { return EInterfaceOptions.NONE; }
-        }
+        IsOutput = false;
+    }
 
-        public override ESendMode SendMode
-        {
-            get { return ESendMode.DELTA_UNIVERSE; }
-        }
+    protected override void OnInputEnable(int port)
+    {
+        portConfig.GoodInput = new GoodInput(inputDisabled: false);
 
-        public override EReceiveMode ReceiveMode
-        {
-            get { return EReceiveMode.DELTA_UNIVERSE; }
-        }
+        if (Enabled)
+            setPortConfigType(EPortType.OutputFromArtNet, true);
 
-        protected override IEnumerable<DMXInterfaceParameter> ParametersInternal
+        IsInput = true;
+    }
+
+    protected override void OnInputDisable(int port)
+    {
+        portConfig.GoodInput = GoodInput.None;
+
+        if (Enabled)
+            setPortConfigType(EPortType.OutputFromArtNet, false);
+
+        IsInput = false;
+    }
+
+    protected override void OnEnable()
+    {
+        portConfig.Type = EPortType.DMX512;
+
+        setPortConfigType(EPortType.InputToArtNet, IsOutput);
+        setPortConfigType(EPortType.OutputFromArtNet, IsInput);
+    }
+
+    protected override void OnDisable()
+    {
+        portConfig.GoodInput = GoodInput.None;
+        portConfig.GoodOutput = GoodOutput.None;
+
+        setPortConfigType(EPortType.OutputFromArtNet, false);
+        setPortConfigType(EPortType.InputToArtNet, false);
+    }
+
+    public override EInterfaceOptions Options
+    {
+        get { return EInterfaceOptions.NONE; }
+    }
+
+    public override ESendMode SendMode
+    {
+        get { return ESendMode.DELTA_UNIVERSE; }
+    }
+
+    public override EReceiveMode ReceiveMode
+    {
+        get { return EReceiveMode.DELTA_UNIVERSE; }
+    }
+
+    protected override IEnumerable<DMXInterfaceParameter> ParametersInternal
+    {
+        get
         {
-            get
+            yield return new DMXInterfaceParameter(PARA_PORT_ADDRESS, typeof(PortAddress), EDMXInterfaceParameterType.PERSISTENT)
             {
-                yield return new DMXInterfaceParameter(PARA_PORT_ADDRESS, typeof(PortAddress), EDMXInterfaceParameterType.PERSISTENT)
-                {
-                    Description =
-                    T._("The PortAddress in ArtNet is the Universe in DMXControl.") +
-                    Environment.NewLine +
-                    T._("Universe in ArtNet is NOT Universe in DMXControl, its Part of the PortAddress.") +
-                    Environment.NewLine +
-                    Environment.NewLine +
-                    T._("The PortAddress is seperated in multiple Parts:") +
-                    Environment.NewLine +
-                    T._("ArtNet 1 to 2 (8Bit) -> Net (0x00), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
-                    Environment.NewLine +
-                    T._("ArtNet 3 to 4 (15Bit) -> Net (0x00-0x7f), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
-                    Environment.NewLine +
-                    T._("PortAddress 0 is deprecated and should not be used!")
-                };
-                yield return new DMXInterfaceParameter(PARA_FORCE_BCAST, typeof(bool), EDMXInterfaceParameterType.PERSISTENT);
-                yield return new DMXInterfaceParameter(PARA_ADD_TARGET, typeof(string), EDMXInterfaceParameterType.PERSISTENT);
+                Description =
+                T._("The PortAddress in ArtNet is the Universe in DMXControl.") +
+                Environment.NewLine +
+                T._("Universe in ArtNet is NOT Universe in DMXControl, its Part of the PortAddress.") +
+                Environment.NewLine +
+                Environment.NewLine +
+                T._("The PortAddress is seperated in multiple Parts:") +
+                Environment.NewLine +
+                T._("ArtNet 1 to 2 (8Bit) -> Net (0x00), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
+                Environment.NewLine +
+                T._("ArtNet 3 to 4 (15Bit) -> Net (0x00-0x7f), Subnet(0x0-0xf) and Universe(0x0-0xf).") +
+                Environment.NewLine +
+                T._("PortAddress 0 is deprecated and should not be used!")
+            };
+            yield return new DMXInterfaceParameter(PARA_FORCE_BCAST, typeof(bool), EDMXInterfaceParameterType.PERSISTENT);
+            yield return new DMXInterfaceParameter(PARA_ADD_TARGET, typeof(string), EDMXInterfaceParameterType.PERSISTENT);
+        }
+    }
+
+    protected override object GetParameterInternal(string parameter)
+    {
+        if (Object.Equals(parameter, PARA_PORT_ADDRESS))
+            return this.PortAddress.Combined;
+        else if (Object.Equals(parameter, PARA_FORCE_BCAST))
+            return this._forceBroadcast;
+        else if (Object.Equals(parameter, PARA_ADD_TARGET))
+        {
+            if (this._additionalTargets == null)
+            {
+                return "";
             }
+            return string.Join("; ", this._additionalTargets.Select(ip => ip.ToString()));
         }
+        return null;
+    }
 
-        protected override object GetParameterInternal(string parameter)
+    protected override bool SetParameterInternal(string parameter, object value)
+    {
+        if (Object.Equals(parameter, PARA_PORT_ADDRESS))
         {
-            if (Object.Equals(parameter, PARA_PORT_ADDRESS))
-                return this.PortAddress.Combined;
-            else if (Object.Equals(parameter, PARA_FORCE_BCAST))
-                return this._forceBroadcast;
-            else if (Object.Equals(parameter, PARA_ADD_TARGET))
+            if (value is PortAddress pa)
             {
-                if (this._additionalTarget == null)
-                {
-                    return "";
-                }
-                return this._additionalTarget.ToString();
-            }
-            return null;
-        }
-
-        protected override bool SetParameterInternal(string parameter, object value)
-        {
-            if (Object.Equals(parameter, PARA_PORT_ADDRESS))
-            {
-                if (value is PortAddress pa)
-                {
-                    this.PortAddress = pa;
-                    return true;
-                }
-                if (value is ushort ushortPortAddress)
-                {
-                    this.PortAddress = new PortAddress((ushort)ushortPortAddress);
-                }
-                if (value is string stringPortAddress)
-                {
-                    ushortPortAddress = Convert.ToUInt16(stringPortAddress);
-                    this.PortAddress = new PortAddress((ushort)ushortPortAddress);
-                }
-            }
-            else if (Object.Equals(parameter, PARA_FORCE_BCAST))
-            {
-                this._forceBroadcast = Convert.ToBoolean(value);
+                this.PortAddress = pa;
                 return true;
             }
-            else if (Object.Equals(parameter, PARA_ADD_TARGET))
+            if (value is ushort ushortPortAddress)
             {
-                String addr = Convert.ToString(value);
-                if (string.IsNullOrEmpty(addr))
-                {
-                    portConfig.ClearAdditionalIPEndpoints();
-                    this._additionalTarget = null;
-                }
-                else
-                {
-                    this._additionalTarget = IPAddress.Parse(addr);
-                    portConfig.AddAdditionalIPEndpoints(this._additionalTarget);
-                }
+                this.PortAddress = new PortAddress((ushort)ushortPortAddress);
             }
-            return false;
+            if (value is string stringPortAddress)
+            {
+                ushortPortAddress = Convert.ToUInt16(stringPortAddress);
+                this.PortAddress = new PortAddress((ushort)ushortPortAddress);
+            }
         }
-
-        private void UpdatePortDescription()
+        else if (Object.Equals(parameter, PARA_FORCE_BCAST))
         {
-            SetPortDetailInfo(0, String.Format(T._("Net: {0} Subnet: {1} Universe: {2} [{3}]"), PortAddress.Net, PortAddress.Subnet, PortAddress.Universe, PortAddress));
-        }
-
-        protected override bool TestParameterInternal(string parameter, object value)
-        {
-            if (String.Equals(parameter, PARA_PORT_ADDRESS))
-            {
-                if (value is PortAddress pa)
-                    return true;
-                if (value is string str)
-                    value = Convert.ToUInt16(value);
-
-                if (!(value is ushort _ushort))
-                    throw new ArgumentException("Value not valid");
-
-                new PortAddress(_ushort);
-
-            }
-            else if (String.Equals(parameter, PARA_ADD_TARGET))
-            {
-                if (!(value is string))
-                    throw new ArgumentException("Value not valid");
-                string addr = Convert.ToString(value);
-                if (!string.IsNullOrEmpty(addr) && !IPAddress.TryParse(addr, out _))
-                {
-                    throw new ArgumentException("Not a valid IP address");
-                }
-            }
+            this._forceBroadcast = Convert.ToBoolean(value);
             return true;
         }
-
-        protected override void PortCompleteInternal(int port)
+        else if (Object.Equals(parameter, PARA_ADD_TARGET))
         {
-            portConfig.GoodInput = new GoodInput(dataReceived: true);
-        }
-
-        protected override byte[] GetDMXInternal(int port, int address, int count)
-        {
-            byte[] b = new byte[count];
-            lock (this._bufferRx)
+            String addresses = Convert.ToString(value);
+            if (string.IsNullOrEmpty(addresses))
             {
-                Array.Copy(this._bufferRx, address, b, 0, count);
+                portConfig.ClearAdditionalIPEndpoints();
+                this._additionalTargets = null;
             }
-            return b;
-        }
-
-        protected override byte GetDMXInternal(int port, int address)
-        {
-            lock (this._bufferRx)
+            else
             {
-                return this._bufferRx[address];
+                this._additionalTargets = addresses.Replace(" ", "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Select(addr => IPAddress.Parse(addr.Trim())).ToList();
+                portConfig.AddAdditionalIPEndpoints(this._additionalTargets.Select(ip => (IPv4Address)ip).ToArray());
             }
         }
+        return false;
+    }
 
-        private void ProcessIncomingDmx(byte[] data)
+    private void UpdatePortDescription()
+    {
+        SetPortDetailInfo(0, String.Format(T._("Net: {0} Subnet: {1} Universe: {2} [{3}]"), PortAddress.Net, PortAddress.Subnet, PortAddress.Universe, PortAddress));
+    }
+
+    protected override bool TestParameterInternal(string parameter, object value)
+    {
+        if (String.Equals(parameter, PARA_PORT_ADDRESS))
         {
-            lock (this._bufferRx)
+            if (value is PortAddress pa)
+                return true;
+            if (value is string str)
+                value = Convert.ToUInt16(value);
+
+            if (!(value is ushort _ushort))
+                throw new ArgumentException("Value not valid");
+
+            new PortAddress(_ushort);
+
+        }
+        else if (String.Equals(parameter, PARA_ADD_TARGET))
+        {
+            if (!(value is string))
+                throw new ArgumentException("Value not valid");
+            string addresses = Convert.ToString(value);
+            if (!string.IsNullOrEmpty(addresses))
+                foreach (var addr in addresses.Replace(" ", "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries))
+                    if (!IPAddress.TryParse(addr, out _))
+                        throw new ArgumentException("Not a valid IP address");
+        }
+        return true;
+    }
+
+    protected override void PortCompleteInternal(int port)
+    {
+        portConfig.GoodInput = new GoodInput(dataReceived: true);
+    }
+
+    protected override byte[] GetDMXInternal(int port, int address, int count)
+    {
+        byte[] b = new byte[count];
+        lock (this._bufferRx)
+        {
+            Array.Copy(this._bufferRx, address, b, 0, count);
+        }
+        return b;
+    }
+
+    protected override byte GetDMXInternal(int port, int address)
+    {
+        lock (this._bufferRx)
+        {
+            return this._bufferRx[address];
+        }
+    }
+
+    private void ProcessIncomingDmx(byte[] data)
+    {
+        lock (this._bufferRx)
+        {
+            for (int i = 0; i < data.Length; ++i)
             {
-                for (int i = 0; i < data.Length; ++i)
+                if (data[i] != this._bufferRx[i])
                 {
-                    if (data[i] != this._bufferRx[i])
-                    {
-                        this._bufferRx[i] = data[i];
-                        OnDMXInChanged(0, i, _bufferRx[i]);
-                        portConfig.GoodOutput = GoodOutput.DATA_TRANSMITTED;
-                    }
+                    this._bufferRx[i] = data[i];
+                    OnDMXInChanged(0, i, _bufferRx[i]);
+                    portConfig.GoodOutput = GoodOutput.DATA_TRANSMITTED;
                 }
             }
         }
+    }
 
-        protected override void SendDMXInternal(int port, int address, byte[] values)
-        {
-            ArtNetControllerInstance.WriteDMXValues(PortAddress, values, (ushort)address, (ushort)values.Length);
-        }
+    protected override void SendDMXInternal(int port, int address, byte[] values)
+    {
+        ArtNetControllerInstance.WriteDMXValues(PortAddress, values, (ushort)address, (ushort)values.Length);
+    }
 
-        protected override void SendDMXInternal(int port, int address, byte value)
-        {
-            ArtNetControllerInstance.WriteDMXValues(PortAddress, new byte[] { value }, (ushort)address, 1);
-        }
+    protected override void SendDMXInternal(int port, int address, byte value)
+    {
+        ArtNetControllerInstance.WriteDMXValues(PortAddress, new byte[] { value }, (ushort)address, 1);
+    }
 
-        public void SetPortAddress(int port, bool dmxin, int address)
-        {
-            //Not implemented
-        }
+    public void SetPortAddress(int port, bool dmxin, int address)
+    {
+        //Not implemented
+    }
 
-        protected override void DisposeHook()
-        {
-            ArtNetControllerInstance.RemovePortConfig(portConfig);
-            ArtNetControllerInstance.DMXReceived -= DMXReceived;
-            base.DisposeHook();
-        }
+    protected override void DisposeHook()
+    {
+        ArtNetControllerInstance.RemovePortConfig(portConfig);
+        ArtNetControllerInstance.DMXReceived -= DMXReceived;
+        base.DisposeHook();
     }
 }

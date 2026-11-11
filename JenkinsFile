@@ -72,10 +72,15 @@ pipeline {
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtisticLicenseArtNet4.deps.json\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtisticLicenseArtNet4.pdb\" \"$WORKSPACE\\output\\\" /F /R /Y /I"
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\ArtNetSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\Humanizer.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\Json.More.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\JsonPointer.Net.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\JsonSchema.Net.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
+				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\Microsoft.Extensions.*.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\RDMSharp.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\WellKnownDataTypes.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
 				bat "xcopy \"$WORKSPACE\\ArtNet4-Plugin\\bin\\Release\\net8.0\\System.*.dll\" \"$WORKSPACE\\output\\dependencies\\\" /F /R /Y /I"
-				
+
 				dir('output') {
 					archiveArtifacts artifacts: '**/*.*'
 				}
