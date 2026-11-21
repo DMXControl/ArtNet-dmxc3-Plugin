@@ -68,9 +68,13 @@ public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
             portConfig.Type &= ~type;
     }
 
+    // Directions are named from the Art-Net point of view (Art-Net 4 spec, ArtPollReply):
+    // DMXControl output -> the port inputs onto Art-Net (InputToArtNet)    -> status is GoodInput.
+    // DMXControl input  -> the port outputs from Art-Net (OutputFromArtNet) -> status is GoodOutput.
+
     protected override void OnOutputEnable(int port)
     {
-        portConfig.GoodOutput = new GoodOutput(isBeingOutputAsDMX: true);
+        portConfig.GoodInput = new GoodInput(inputDisabled: false);
 
         if (Enabled)
             setPortConfigType(EPortType.InputToArtNet, true);
@@ -80,7 +84,7 @@ public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
 
     protected override void OnOutputDisable(int port)
     {
-        portConfig.GoodOutput = GoodOutput.None;
+        portConfig.GoodInput = new GoodInput(inputDisabled: true);
 
         if (Enabled)
             setPortConfigType(EPortType.InputToArtNet, false);
@@ -90,7 +94,8 @@ public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
 
     protected override void OnInputEnable(int port)
     {
-        portConfig.GoodInput = new GoodInput(inputDisabled: false);
+        // No "data is being output" bit yet: ArtNetSharp sets it when ArtDmx actually arrives.
+        portConfig.GoodOutput = GoodOutput.None;
 
         if (Enabled)
             setPortConfigType(EPortType.OutputFromArtNet, true);
@@ -100,7 +105,7 @@ public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
 
     protected override void OnInputDisable(int port)
     {
-        portConfig.GoodInput = GoodInput.None;
+        portConfig.GoodOutput = GoodOutput.None;
 
         if (Enabled)
             setPortConfigType(EPortType.OutputFromArtNet, false);
@@ -289,7 +294,8 @@ public class ArtNetInterface : AbstractDMXInterface, IDMXInterfacePortConfig
                 {
                     this._bufferRx[i] = data[i];
                     OnDMXInChanged(0, i, _bufferRx[i]);
-                    portConfig.GoodOutput = GoodOutput.DATA_TRANSMITTED;
+                    // GoodOutput is not touched here: ArtNetSharp already sets "data is being output" (bit 7)
+                    // and "merging" (bit 3) when the ArtDmx arrives. Assigning it would wipe these and the config bits.
                 }
             }
         }

@@ -11,8 +11,21 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Local development: if the ArtNetSharp repository is checked out next to this one, build against it directly. -->
+    <ArtNetSharpProject>$(MSBuildThisFileDirectory)..\..\ArtNetSharp\ArtNetSharp\ArtNetSharp.csproj</ArtNetSharpProject>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(ArtNetSharpProject)')">
+    <ProjectReference Include="$(ArtNetSharpProject)" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Otherwise (e.g. GitHub Actions, which only checks out this repository) use the published package. -->
+  <ItemGroup Condition="!Exists('$(ArtNetSharpProject)')">
+    <PackageReference Include="ArtNetSharp" Version="0.0.46" PrivateAssets="all" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="ArtNetSharp" Version="0.0.42" PrivateAssets="all" />
 	  <Reference Include="DMXLIB">
 		  <HintPath Condition="Exists('..\..\DMXPlugins\DMXLIB\bin\Debug\netstandard2.0')">..\..\DMXPlugins\DMXLIB\bin\Debug\netstandard2.0\DMXLIB.dll</HintPath>
 		  <HintPath Condition="Exists('..\dep')">..\dep\DMXLIB.dll</HintPath>
