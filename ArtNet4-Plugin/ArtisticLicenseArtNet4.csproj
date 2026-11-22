@@ -22,7 +22,7 @@
 
   <!-- Otherwise (e.g. GitHub Actions, which only checks out this repository) use the published package. -->
   <ItemGroup Condition="!Exists('$(ArtNetSharpProject)')">
-    <PackageReference Include="ArtNetSharp" Version="0.0.46" PrivateAssets="all" />
+    <PackageReference Include="ArtNetSharp" Version="0.0.48" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
